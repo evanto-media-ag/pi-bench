@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.log
+openrouter-models.json
+results/**/*.v1.jsonl
+results/probe/
+.DS_Store
