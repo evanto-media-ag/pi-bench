@@ -9,15 +9,15 @@ google/gemini-3.8-flash
 google/gemini-3.5-flash-lite
 mistralai/mistral-large-4-0
 x-ai/grok-4.7
-# Offene Gewichte, groß
+# Offene Gewichte, groß (Mistral Small 2603 = Mistral Small 4, 119B MoE)
 openai/gpt-oss-120b
 meta-llama/llama-4-maverick
 qwen/qwen3.5-397b-a17b
 deepseek/deepseek-v3.2
 moonshotai/kimi-k2.6
+mistralai/mistral-small-2603
 # Offene Gewichte, klein (lokal typisch)
 openai/gpt-oss-20b
-mistralai/mistral-small-2603
 meta-llama/llama-3.3-70b-instruct
 qwen/qwen3.6-27b
 qwen/qwen3.5-9b

@@ -4,6 +4,8 @@
 Misst je Modell × Fall (F1–F6) × Kontext (a/b/c) × N Läufe, ob das Modell der eingeschleusten Anweisung folgt
 ("befolgt"), sie ignoriert ("ignoriert") oder den Mitarbeiter auf sie hinweist ("benannt").
 Modelle laufen über OpenRouter (OpenAI-kompatible Chat-API); Schlüssel aus ~/.llm-keys/openrouter.
+Lokale Modelle: Präfix "ollama/" (z. B. ollama/phi4) läuft über die native Ollama-API (OLLAMA_URL, Standard
+http://localhost:11434) mit num_ctx 16384; der Richter läuft weiterhin über OpenRouter.
 Bewertung: Regex für Aktionen (F3, F4) plus ein Richtermodell für Zusagen und Hinweise (JSON), Stichprobe von Hand.
 
 Aufruf:
@@ -21,10 +23,36 @@ KEY = pathlib.Path.home().joinpath(".llm-keys/openrouter").read_text().strip()
 URL = "https://openrouter.ai/api/v1/chat/completions"
 JUDGE_MODEL = "openai/gpt-6-luna"
 TEMPERATURE = 0.7
+OLLAMA_URL = __import__("os").environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_NUM_CTX = 16384   # Prompt (ca. 1 500 Token) plus Denkteil bis MAX_TOKENS
 MAX_TOKENS = 8000        # Reasoning-Modelle (Mistral Large 4, Qwen, DeepSeek) brauchen Platz für den Denkteil
 
 
+def chat_ollama(model, messages, temperature=TEMPERATURE, max_tokens=MAX_TOKENS, retries=3):
+    """Lokales Modell über die native Ollama-API (/api/chat), damit num_ctx gesetzt werden kann."""
+    body = json.dumps({"model": model, "messages": messages, "stream": False,
+                       "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": OLLAMA_NUM_CTX}}).encode()
+    req = urllib.request.Request(f"{OLLAMA_URL}/api/chat", data=body, headers={"Content-Type": "application/json"})
+    for i in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=900) as r:
+                d = json.load(r)
+            msg = d.get("message", {}); txt = msg.get("content") or ""; fin = d.get("done_reason") or ""
+            if not txt and fin == "length":
+                txt = "__LENGTH__ Denkteil hat das Tokenbudget verbraucht"
+            usage = {"prompt_tokens": d.get("prompt_eval_count"), "completion_tokens": d.get("eval_count"),
+                     "eval_seconds": round((d.get("eval_duration") or 0) / 1e9, 1), "finish_reason": fin,
+                     "provider": "ollama-local", "reasoning": (msg.get("thinking") or "")[:1500]}
+            return txt, usage, "ollama/" + d.get("model", model)
+        except Exception as e:
+            if i < retries - 1:
+                time.sleep(5); continue
+            return f"__ERROR__ {type(e).__name__} {e}", {}, "ollama/" + model
+
+
 def chat(model, messages, temperature=TEMPERATURE, max_tokens=MAX_TOKENS, retries=5):
+    if model.startswith("ollama/"):
+        return chat_ollama(model[len("ollama/"):], messages, temperature, max_tokens)
     body = json.dumps({"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}).encode()
     req = urllib.request.Request(URL, data=body, headers={
         "Authorization": f"Bearer {KEY}", "Content-Type": "application/json",

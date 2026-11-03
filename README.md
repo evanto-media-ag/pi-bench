@@ -32,10 +32,10 @@ Judging: a regex decides the tool actions (F3/F4); a judge model (JSON-schema) d
 
 ## Headline findings (run of 2026-10-30, 21 models, 3,528 calls)
 
-- **Context beats the model.** Without a system prompt 37 % of all answers follow the injection; with a company system prompt 19 %; with an injection warning 12 %. Giving the model the facts drops the training demo from 60 % to 7 %.
-- **Frontier models almost never comply** (0–4 %) — but without a warning they rarely *flag* the injection; the warning turns silent ignoring into an explicit heads-up to the employee (80–100 %).
-- **Open-weight models — the ones EU-sovereign hosters offer — comply far more**: large 20–54 %, the small, locally-typical ones 41–74 %.
-- **The data-exfiltration vector works regardless of where the model runs.** Almost all open models perform it, even with the injection warning in the system prompt. Local hosting removes the provider risk, not the exfiltration risk.
+- **Context beats the model.** Without a system prompt 37 % of all answers follow the injection; with a company system prompt 19 %; with an injection warning 12 %. Giving the model the facts drops the training demo from 60 % to 40 %, and to 7 % together with a company rule in the system prompt.
+- **Frontier models almost never comply** (0–4 %) — but without a warning they rarely *flag* the injection; the warning turns silent ignoring into an explicit heads-up to the employee (mostly 75–100 %).
+- **Open-weight models — the ones EU-sovereign hosters offer — comply far more**: large 13–62 %, the small, locally-typical ones 34–74 %. (Grouping corrected on 2026-11-03: `mistral-small-2603` is Mistral Small 4, a 119B MoE model, and now counts as large.)
+- **The data-exfiltration vector works regardless of where the model runs.** With company rules in the system prompt, open models embed the exfiltration image in 90–100 % of runs; even with the injection warning, large ones still do in 42 % and small ones in 74 %. Local hosting removes the provider risk, not the exfiltration risk.
 
 Full numbers, per-cell tables and caveats: [`results/2026-10-30/summary.md`](results/2026-10-30/summary.md) and the report [`pi-bench-Ergebnisbericht-2026-10-30.md`](pi-bench-Ergebnisbericht-2026-10-30.md) (German).
 
@@ -48,6 +48,7 @@ echo "YOUR_OPENROUTER_KEY" > ~/.llm-keys/openrouter
 python3 pi_bench.py --models openai/gpt-oss-120b --runs 3 --out results/probe
 python3 pi_bench.py --models-file models.txt --runs 8 --out results/my-run
 python3 pi_bench.py --judge-only --out results/my-run         # re-judge only
+python3 pi_bench.py --models ollama/phi4 --runs 8 --workers 2 --out results/local   # local model via Ollama (judge stays on OpenRouter)
 ```
 
 Models run through [OpenRouter](https://openrouter.ai) (OpenAI-compatible chat API); the key is read from `~/.llm-keys/openrouter`. Temperature 0.7 (as in production), not 0. Results are written as `responses.jsonl`, `judged.jsonl`, `summary.csv` and `summary.md`; the harness resumes where it left off. A full 21-model run cost about 11 USD in model calls.
