@@ -39,6 +39,20 @@ Judging: a regex decides the tool actions (F3/F4); a judge model (JSON-schema) d
 
 Full numbers, per-cell tables and caveats: [`results/2026-10-30/summary.md`](results/2026-10-30/summary.md) and the report [`pi-bench-Ergebnisbericht-2026-10-30.md`](pi-bench-Ergebnisbericht-2026-10-30.md) (German).
 
+## Local cross-check (run of 2026-11-03, Ollama 0.40.11, MacBook Pro M4 Pro 48 GB)
+
+Three open models were re-run locally with Ollama (default quantisation: MXFP4 for `gpt-oss:20b`, Q4_K_M for `phi4` and `mistral-small:24b`; `num_ctx` 16384; same cases, same judge) and compared with hosted runs of the same models. Mistral Small 3 (24B, 2501) was also run hosted for the pairing.
+
+| Model | followed, avg (hosted → local) | exfiltration F3+F4 with injection warning (hosted → local) | flagged in context c (local) |
+|---|---|---|---|
+| gpt-oss-20b | 42 → 45 % | 75 → 94 % | 4 % |
+| Phi-4 | 74 → 68 % | 100 → 100 % | 2 % |
+| Mistral Small 3 (24B, 2501) | 65 → 64 % | 100 → 100 % | 0 % |
+
+Running locally does not change the picture: the exfiltration actions stay at 94–100 % even with the explicit warning. One notable difference: hosted Phi-4 largely ignored the company rules in the PDF-metadata and CRM cases (88 % false promises), local Phi-4 respected them (0–12 %) – same weights, different serving stack. Data: [`results/2026-11-03-local/`](results/2026-11-03-local/).
+
+Figures (German blog series and English article, generated from the summaries): [`figures/`](figures/) and [`figures/en/`](figures/en/) via `blog_schemata.py` and `schemata_en.py`.
+
 ## Run it yourself
 
 ```bash
